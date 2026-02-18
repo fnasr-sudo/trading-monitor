@@ -1,1 +1,1 @@
-/data/trading_monitor/chart_20260218_015029.png
+/data/trading_monitor/chart_baseline_EURUSD.png
