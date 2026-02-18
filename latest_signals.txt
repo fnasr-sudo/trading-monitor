@@ -1,2 +1,2 @@
-/data/trading_monitor/chart_EURUSD_5m_20260218_024725.png
-/data/trading_monitor/chart_GBPUSD_15m_20260218_024729.png
+/data/trading_monitor/chart_GBPUSD_5m_20260218_030235.png
+/data/trading_monitor/chart_GBPUSD_15m_20260218_030238.png
