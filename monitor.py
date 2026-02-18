@@ -47,50 +47,120 @@ async def get_candles(account, symbol, timeframe, limit=100):
 
 def detect_strategy_a(df):
     """
-    Strategy A: Price Origins / Rejection
+    Strategy A: Price Origins / Zone Rejection (Scalping)
+    - Concept: "Zone Recovery" or "Origin of Move"
+    - Logic: 
+        1. Identify a strong directional move (Impulse).
+        2. Mark the "Origin" (Base) of that move as a Key Level.
+        3. If price returns to this Origin level, it's an entry zone.
+        4. User ladders multiple entries around this level.
+        5. Target: Small scalps (7-10 pips).
     """
     df['strategy_a'] = False
     df['strategy_a_type'] = None
-    if len(df) < 5: return df
-    
-    df['body'] = abs(df['open'] - df['close'])
-    df['avg_body'] = df['body'].rolling(window=20).mean()
-    
-    for i in range(2, len(df)):
-        current = df.iloc[i]
-        prev = df.iloc[i-1]
-        
-        is_impulse = current['body'] > (df.iloc[i]['avg_body'] * 2.5)
-        
-        if is_impulse:
-            is_base = prev['body'] < (df.iloc[i]['avg_body'] * 0.8)
-            upper_wick = prev['high'] - max(prev['open'], prev['close'])
-            lower_wick = min(prev['open'], prev['close']) - prev['low']
-            is_rejection = (upper_wick > prev['body'] * 1.5) or (lower_wick > prev['body'] * 1.5)
+    if len(df) < 50: return df
 
-            if is_base or is_rejection:
-                df.at[df.index[i], 'strategy_a'] = True
-                df.at[df.index[i], 'strategy_a_type'] = 'Origin/Base' if is_base else 'Rejection'
-                
+    # 1. Identify "Origin" Levels from history
+    # An origin is a candle that started a strong trend (series of same-color candles or large body)
+    
+    # Calculate body and direction
+    df['body'] = df['close'] - df['open']
+    df['abs_body'] = abs(df['body'])
+    df['direction'] = df['body'].apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))
+    df['atr'] = df['high'] - df['low'] # Simple range for volatility context
+
+    # Look back to find "Origins"
+    # We simulate this by checking if CURRENT price is inside a historical Origin Zone
+    
+    # We need to store active zones. For a simple scanner, we look for:
+    # - Did price just touch a level that was the start of a big move previously?
+    
+    # Let's simplify for the scanner:
+    # Find significant previous impulses (e.g., > 2x ATR)
+    # If current price retraces to the OPEN of that impulse candle, trigger signal.
+    
+    # Define "Big Move" threshold (e.g., body > 2 * 20-period average body)
+    avg_body = df['abs_body'].rolling(window=20).mean()
+    
+    # Iterate backwards to find zones? No, iterate forward to simulate real-time
+    # We maintain a list of "Active Zones" [price, direction, creation_time]
+    
+    # For the chart generation, we just mark the current bar if it triggers.
+    
+    current_idx = df.index[-1]
+    current_price = df.iloc[-1]['close'] # Checking close or low/high? Touch is better.
+    current_low = df.iloc[-1]['low']
+    current_high = df.iloc[-1]['high']
+    
+    # Naive implementation for visual check:
+    # Check last 50 candles for a "Big Impulse"
+    for i in range(len(df)-50, len(df)-5): # Look at history, excluding immediate recent
+        if i < 0: continue
+        
+        candle = df.iloc[i]
+        limit_body = avg_body.iloc[i] * 2.5 # Threshold for "Big Move"
+        
+        if candle['abs_body'] > limit_body:
+            # It's an impulse.
+            origin_level = candle['open']
+            direction = candle['direction'] # 1 (Bullish), -1 (Bearish)
+            
+            # Check if CURRENT price is testing this origin
+            # Bullish Impulse Origin (Support) -> We want to Buy if price drops to it
+            if direction == 1: 
+                # Check if current low touched the origin level (within tolerance, e.g., 3 pips)
+                # 3 pips approx 0.0003 for EURUSD
+                dist = abs(current_low - origin_level)
+                if dist < 0.0005 and current_price >= origin_level: # Touching support
+                     df.at[current_idx, 'strategy_a'] = True
+                     df.at[current_idx, 'strategy_a_type'] = f"Test Buy Origin @ {origin_level}"
+
+            # Bearish Impulse Origin (Resistance) -> We want to Sell if price rises to it
+            elif direction == -1:
+                dist = abs(current_high - origin_level)
+                if dist < 0.0005 and current_price <= origin_level: # Touching resistance
+                     df.at[current_idx, 'strategy_a'] = True
+                     df.at[current_idx, 'strategy_a_type'] = f"Test Sell Origin @ {origin_level}"
+                     
     return df
 
 def detect_strategy_b(df):
     """
-    Strategy B: Sharp Spikes / Snapback
+    Strategy B: Trend Snapback / Bear Market Rally
+    - Concept: "Unrealistic Sharp Counter-Move"
+    - Logic:
+        1. Identify clear trend (e.g., MA slope or price action).
+        2. Wait for a SHARP, FAST move against the trend ("Unrealistic").
+        3. Entry: Fade the move (Join the original trend).
+        4. Target: Break the previous extreme (Higher High for uptrend, Lower Low for downtrend).
     """
     df['strategy_b'] = False
-    if len(df) < 20: return df
+    df['strategy_b_type'] = None
+    if len(df) < 50: return df
     
+    # 1. Trend Filter (e.g., 50 SMA)
+    df['sma50'] = df['close'].rolling(window=50).mean()
+    
+    # 2. Volatility (ATR-like)
     df['range'] = df['high'] - df['low']
     df['avg_range'] = df['range'].rolling(window=20).mean()
     
-    for i in range(1, len(df)):
-        current = df.iloc[i]
-        is_spike = current['range'] > (df.iloc[i]['avg_range'] * 3.0)
-        
-        if is_spike:
-            df.at[df.index[i], 'strategy_b'] = True
-            
+    current_idx = df.index[-1]
+    current = df.iloc[-1]
+    trend = 1 if current['close'] > current['sma50'] else -1
+    
+    # Check for "Unrealistic" Counter-Move (Large Range Candle against trend)
+    # e.g., Range > 3x Avg Range AND Candle Direction is Against Trend
+    
+    is_large_candle = current['range'] > (df.iloc[-2]['avg_range'] * 3.0)
+    candle_direction = 1 if current['close'] > current['open'] else -1
+    
+    if is_large_candle and candle_direction != trend:
+        # It's a sharp counter-move!
+        signal_type = "Bullish Snapback" if trend == 1 else "Bearish Snapback"
+        df.at[current_idx, 'strategy_b'] = True
+        df.at[current_idx, 'strategy_b_type'] = signal_type
+
     return df
 
 def generate_chart(df, symbol, timeframe, filename):
