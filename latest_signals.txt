@@ -1,2 +1,1 @@
-/data/trading_monitor/chart_GBPUSD_5m_20260218_030235.png
-/data/trading_monitor/chart_GBPUSD_15m_20260218_030238.png
+/data/trading_monitor/chart_GBPUSD_15m_20260218_031744.png
