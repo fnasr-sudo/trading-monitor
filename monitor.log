@@ -1,0 +1,46 @@
+Starting main...
+Connected to account: FXEM daily (91ed7198-e093-47b8-9940-f73a07ca49e4)
+Iteration 1/20 at 2026-02-18 01:50:27.632556
+[2026-02-18T01:50:27.856468] [INFO] Connecting MetaApi websocket client to the MetaApi server via https://mt-client-api-v1.london-a.agiliumtrade.ai shared server.  
+[2026-02-18T01:50:27.857330] [INFO] Connecting MetaApi websocket client to the MetaApi server via https://mt-client-api-v1.london-b.agiliumtrade.ai shared server.  
+[2026-02-18T01:50:27.928671] [INFO] london:1: MetaApi websocket client connected to the MetaApi server  
+[2026-02-18T01:50:27.931949] [INFO] london:0: MetaApi websocket client connected to the MetaApi server  
+Connection type: <class 'metaapi_cloud_sdk.metaapi.rpc_metaapi_connection_instance.RpcMetaApiConnectionInstance'>
+Connection dir: ['account', 'calculate_margin', 'cancel_order', 'close', 'close_by', 'close_position', 'close_position_partially', 'close_positions_by_symbol', 'connect', 'create_limit_buy_order', 'create_limit_sell_order', 'create_market_buy_order', 'create_market_sell_order', 'create_stop_buy_order', 'create_stop_limit_buy_order', 'create_stop_limit_sell_order', 'create_stop_sell_order', 'get_account_information', 'get_book', 'get_candle', 'get_deals_by_position', 'get_deals_by_ticket', 'get_deals_by_time_range', 'get_history_orders_by_position', 'get_history_orders_by_ticket', 'get_history_orders_by_time_range', 'get_order', 'get_orders', 'get_position', 'get_positions', 'get_server_time', 'get_symbol_price', 'get_symbol_specification', 'get_symbols', 'get_tick', 'instance_id', 'modify_order', 'modify_position', 'refresh_symbol_quotes', 'wait_synchronized']
+Chart generated: /data/trading_monitor/chart_20260218_015029.png
+Iteration 2/20 at 2026-02-18 02:05:32.014107
+Connection type: <class 'metaapi_cloud_sdk.metaapi.rpc_metaapi_connection_instance.RpcMetaApiConnectionInstance'>
+Connection dir: ['account', 'calculate_margin', 'cancel_order', 'close', 'close_by', 'close_position', 'close_position_partially', 'close_positions_by_symbol', 'connect', 'create_limit_buy_order', 'create_limit_sell_order', 'create_market_buy_order', 'create_market_sell_order', 'create_stop_buy_order', 'create_stop_limit_buy_order', 'create_stop_limit_sell_order', 'create_stop_sell_order', 'get_account_information', 'get_book', 'get_candle', 'get_deals_by_position', 'get_deals_by_ticket', 'get_deals_by_time_range', 'get_history_orders_by_position', 'get_history_orders_by_ticket', 'get_history_orders_by_time_range', 'get_order', 'get_orders', 'get_position', 'get_positions', 'get_server_time', 'get_symbol_price', 'get_symbol_specification', 'get_symbols', 'get_tick', 'instance_id', 'modify_order', 'modify_position', 'refresh_symbol_quotes', 'wait_synchronized']
+Retrying get_candle failed: Specified symbol candle not found
+Error in iteration 2: Specified symbol candle not found
+Traceback (most recent call last):
+  File "/data/trading_monitor/monitor.py", line 104, in main
+    df = await get_candles(account, SYMBOL, TIMEFRAME)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/trading_monitor/monitor.py", line 48, in get_candles
+    raise e
+  File "/data/trading_monitor/monitor.py", line 44, in get_candles
+    candle = await connection.get_candle(symbol, timeframe)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/monitor_venv/lib/python3.14/site-packages/metaapi_cloud_sdk/clients/metaapi/metaapi_websocket_client.py", line 1193, in get_candle
+    response = await self.rpc_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/data/monitor_venv/lib/python3.14/site-packages/metaapi_cloud_sdk/clients/metaapi/metaapi_websocket_client.py", line 1705, in rpc_request
+    raise err
+  File "/data/monitor_venv/lib/python3.14/site-packages/metaapi_cloud_sdk/clients/metaapi/metaapi_websocket_client.py", line 1670, in rpc_request
+    return await self._make_request(account_id, instance_number, request, timeout_in_seconds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/monitor_venv/lib/python3.14/site-packages/metaapi_cloud_sdk/clients/metaapi/metaapi_websocket_client.py", line 1737, in _make_request
+    resolve = await asyncio.wait_for(
+              ^^^^^^^^^^^^^^^^^^^^^^^
+        socket_instance['requestResolves'][request_id], timeout=timeout_in_seconds or self._request_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/linuxbrew/.linuxbrew/opt/python@3.14/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+metaapi_cloud_sdk.clients.error_handler.NotFoundException: Specified symbol candle not found
